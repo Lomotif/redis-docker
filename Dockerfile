@@ -4,6 +4,8 @@ RUN mkdir -p /etc/redis \
 	&& mkdir -p /var/redis/db \
 	&& chown redis.redis /var/redis/db
 
+RUN apk add  --no-cache su-exec
+
 VOLUME /var/redis/db
 WORKDIR /var/redis/db
 
