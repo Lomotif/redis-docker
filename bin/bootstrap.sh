@@ -20,6 +20,13 @@ function create_redis_db_location () {
   fi
 }
 
+# Set up kernel tuning parameters
+function configure_kernel () {
+  source system
+  configure_sysctl
+}
+
+
 case "$1" in
   redis)
     create_redis
@@ -27,6 +34,10 @@ case "$1" in
 
   redis_db)
     create_redis_db_location
+    ;;
+
+  configure_kernel)
+    configure_kernel
     ;;
 
   *)
