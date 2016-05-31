@@ -20,4 +20,17 @@ These two folders will be mounted in the container at run time
 
 # Running
 
-    $ docker run -d -v /etc/redis:/etc/redis:ro -v /mnt/data/redis/db:/var/redis/db --name redis lomotif/redis
+We set two special options on the `docker run` command
+
+    --ulimit nofile=10032
+
+    We bump the number of file descriptors in order to bump the number of open connections
+
+    --cpuset-cpus="2,3"
+
+    Set the CPU affinity to two specific CPUs. While Redis is single-threaded, we set affinity
+    to two CPUs since Redis will spin up background threads/process for flushing to disk.
+    Through this, we attempt to avoid conflict with other containers/apps on the system.
+
+
+    $ docker run -d -v /etc/redis:/etc/redis:ro -v /mnt/data/redis/db:/var/redis/db --ulimit nofile=10032 --cpuset-cpus="2,3" --name redis lomotif/redis
