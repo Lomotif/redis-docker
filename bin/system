@@ -2,25 +2,56 @@
 
 function configure_sysctl () {
 
-  echo <<PARAMS >> /etc/sysctl.conf
+  echo -n "About to modify sysctl (yes/no): "
+  read CONFIRM
+
+  if [ "${CONFIRM,,}" != 'yes' ]; then
+    echo "Response was not 'yes'. Aborting"
+    exit 1
+  fi
+
+  # Ref: http://unix.stackexchange.com/q/83807
+  sudo tee -a /etc/sysctl.conf > /dev/null <<PARAMS
 
 # Custom - optmising networking for high load for redis
-vm.swappiness=0                       # turn off swapping
-vm.overcommit_memory=1                # allow redis to optimistically allocate memory
-net.ipv4.tcp_sack=1                   # enable selective acknowledgements
-net.ipv4.tcp_timestamps=1             # needed for selective acknowledgements
-net.ipv4.tcp_window_scaling=1         # scale the network window
-net.ipv4.tcp_congestion_control=cubic # better congestion algorythm
-net.ipv4.tcp_syncookies=1             # enable syn cookies
-net.ipv4.tcp_tw_reuse=1               # recycle sockets quickly
-net.ipv4.tcp_max_syn_backlog=4096     # backlog setting
-net.core.somaxconn=2048               # up the number of connections per port
+# turn off swapping
+vm.swappiness=0
+
+# allow redis to optimistically allocate memory
+vm.overcommit_memory=1
+
+# enable selective acknowledgements
+net.ipv4.tcp_sack=1
+
+# needed for selective acknowledgements
+net.ipv4.tcp_timestamps=1
+
+# scale the network window
+net.ipv4.tcp_window_scaling=1
+
+# better congestion algorythm
+net.ipv4.tcp_congestion_control=cubic
+
+# enable syn cookies
+net.ipv4.tcp_syncookies=1
+
+# recycle sockets quickly
+net.ipv4.tcp_tw_reuse=1
+
+# backlog setting
+net.ipv4.tcp_max_syn_backlog=4096
+
+# up the number of connections per port
+net.core.somaxconn=65535
 
 PARAMS
 
   # Enact the changes above
-  sudo sysctl -p  
+  echo "Enabling sysctl changes"
+  sudo sysctl -p
 
-  echo never > sudo tee /sys/kernel/mm/transparent_hugepage/enabled
+  echo "never" |  sudo tee /sys/kernel/mm/transparent_hugepage/enabled
+
+  echo "Done"
 
 }
