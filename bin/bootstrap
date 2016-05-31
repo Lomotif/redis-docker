@@ -1,5 +1,7 @@
 #!/bin/bash
 
+BINDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
 # Create redis config directory
 function create_redis () {
   if [ ! -d /etc/redis ]; then
@@ -22,7 +24,7 @@ function create_redis_db_location () {
 
 # Set up kernel tuning parameters
 function configure_kernel () {
-  source system
+  source ${BINDIR}/system
   configure_sysctl
 }
 
