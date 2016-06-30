@@ -1,18 +1,18 @@
 FROM redis:alpine
 
-RUN mkdir -p /etc/redis \
-	&& mkdir -p /var/redis/db \
-	&& chown redis.redis /var/redis/db
-
 RUN apk add  --no-cache su-exec
 
-VOLUME /var/redis/db
-WORKDIR /var/redis/db
+RUN mkdir -p /etc/redis && \
+    chgrp redis /etc/redis && \
+    chmod g+w /etc/redis
 
-COPY redis/redis.conf /etc/redis/redis.conf
+
+COPY redis/master.conf /etc/redis/master.conf
+COPY redis/slave.conf /etc/redis/slave.conf
 COPY redis/entrypoint.sh /entrypoint.sh
+COPY redis/run.sh /run.sh
 
-CMD ["redis-server", "/etc/redis/redis.conf"]
+CMD ["/run.sh"]
 ENTRYPOINT ["/entrypoint.sh"]
 
 
