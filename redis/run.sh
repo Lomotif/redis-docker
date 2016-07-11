@@ -35,7 +35,10 @@ launchsentinel() {
   sentinel_conf=/etc/redis/sentinel.conf
 #  curl http://${KUBERNETES_RO_SERVICE_HOST}:${KUBERNETES_RO_SERVICE_PORT}/api/v1beta1/endpoints/redis-master | python /sentinel.py > ${sentinel_conf}
 
-  echo "sentinel monitor ${REDIS_MASTER_NAME} ${master} 6379 2" > ${sentinel_conf}
+  IPADDR=$(ifconfig eth0 | grep 'inet addr' | cut -d ':' -f 2 | cut -d ' ' -f 1)
+
+  echo "bind ${IPADDR}" > ${sentinel_conf}
+  echo "sentinel monitor ${REDIS_MASTER_NAME} ${master} 6379 2" >> ${sentinel_conf}
   echo "sentinel down-after-milliseconds ${REDIS_MASTER_NAME} 60000" >> ${sentinel_conf}
   echo "sentinel failover-timeout ${REDIS_MASTER_NAME} 180000" >> ${sentinel_conf}
   echo "sentinel parallel-syncs ${REDIS_MASTER_NAME} 1" >> ${sentinel_conf}
