@@ -2,6 +2,8 @@
 #
 # Borrowed shamelessly from https://hub.docker.com/r/kubernetes/redis/
 
+export REDIS_MASTER_NAME=${REDIS_MASTER_NAME:-redismaster}
+
 launchmaster() {
   if [[ ! -e /data/redis ]]; then
     echo "Redis master data doesn't exist, data won't be persistent!"
@@ -15,7 +17,7 @@ launchmaster() {
 
 launchsentinel() {
   while true; do
-    master=$(redis-cli -h ${REDIS_SENTINEL_SERVICE_HOST} -p ${REDIS_SENTINEL_SERVICE_PORT} --csv SENTINEL get-master-addr-by-name redismaster | tr ',' ' ' | cut -d' ' -f1)
+    master=$(redis-cli -h ${FEED_REDIS_SENTINEL_SERVICE_HOST} -p ${FEED_REDIS_SENTINEL_SERVICE_PORT} --csv SENTINEL get-master-addr-by-name ${REDIS_MASTER_NAME} | tr ',' ' ' | cut -d' ' -f1)
     if [[ ${master} ]]; then
       master="${master//\"}"
     else
@@ -33,10 +35,10 @@ launchsentinel() {
   sentinel_conf=/etc/redis/sentinel.conf
 #  curl http://${KUBERNETES_RO_SERVICE_HOST}:${KUBERNETES_RO_SERVICE_PORT}/api/v1beta1/endpoints/redis-master | python /sentinel.py > ${sentinel_conf}
 
-  echo "sentinel monitor redismaster ${master} 6379 2" > ${sentinel_conf}
-  echo "sentinel down-after-milliseconds redismaster 60000" >> ${sentinel_conf}
-  echo "sentinel failover-timeout redismaster 180000" >> ${sentinel_conf}
-  echo "sentinel parallel-syncs redismaster 1" >> ${sentinel_conf}
+  echo "sentinel monitor ${REDIS_MASTER_NAME} ${master} 6379 2" > ${sentinel_conf}
+  echo "sentinel down-after-milliseconds ${REDIS_MASTER_NAME} 60000" >> ${sentinel_conf}
+  echo "sentinel failover-timeout ${REDIS_MASTER_NAME} 180000" >> ${sentinel_conf}
+  echo "sentinel parallel-syncs ${REDIS_MASTER_NAME} 1" >> ${sentinel_conf}
 
   redis-sentinel ${sentinel_conf}
 }
@@ -47,7 +49,7 @@ launchslave() {
     mkdir /data/redis/
   fi
   while true; do
-    master=$(redis-cli -h ${REDIS_SENTINEL_SERVICE_HOST} -p ${REDIS_SENTINEL_SERVICE_PORT} --csv SENTINEL get-master-addr-by-name redismaster | tr ',' ' ' | cut -d' ' -f1)
+    master=$(redis-cli -h ${FEED_REDIS_SENTINEL_SERVICE_HOST} -p ${FEED_REDIS_SENTINEL_SERVICE_PORT} --csv SENTINEL get-master-addr-by-name ${REDIS_MASTER_NAME} | tr ',' ' ' | cut -d' ' -f1)
     if [[ ${master} ]]; then
       master="${master//\"}"
     else
