@@ -11,8 +11,8 @@ launchmaster() {
   fi
   IPADDR=$(ifconfig eth0 | grep 'inet addr' | cut -d ':' -f 2 | cut -d ' ' -f 1)
   # IPADDR=0.0.0.0
-  sed "s/^bind .*$/bind ${IPADDR}/" /etc/redis/master.conf > /etc/redis/master-tmp.conf
-  redis-server /etc/redis/master-tmp.conf
+  sed -i "s/^bind .*$/bind ${IPADDR}/" /etc/redis/master.conf
+  redis-server /etc/redis/master.conf
 }
 
 launchsentinel() {
