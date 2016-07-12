@@ -68,6 +68,8 @@ launchslave() {
     sleep 10
   done
 
+  IPADDR=$(ifconfig eth0 | grep 'inet addr' | cut -d ':' -f 2 | cut -d ' ' -f 1)
+  sed -i "s/^bind .*$/bind ${IPADDR}/" /etc/redis/slave.conf
   sed -i "s/%master-ip%/${master}/" /etc/redis/slave.conf
   sed -i "s/%master-port%/6379/" /etc/redis/slave.conf
   redis-server /etc/redis/slave.conf
