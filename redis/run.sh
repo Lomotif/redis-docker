@@ -3,6 +3,7 @@
 # Borrowed shamelessly from https://hub.docker.com/r/kubernetes/redis/
 
 export REDIS_MASTER_NAME=${REDIS_MASTER_NAME:-redismaster}
+export PORT=${REDIS_PORT:-6379}
 export MAXMEMORY=${REDIS_MAXMEMORY:-1000000000}
 
 launchmaster() {
@@ -40,7 +41,7 @@ launchsentinel() {
   IPADDR=$(ifconfig eth0 | grep 'inet addr' | cut -d ':' -f 2 | cut -d ' ' -f 1)
 
   echo "bind ${IPADDR}" > ${sentinel_conf}
-  echo "sentinel monitor ${REDIS_MASTER_NAME} ${master} 6379 2" >> ${sentinel_conf}
+  echo "sentinel monitor ${REDIS_MASTER_NAME} ${master} ${PORT} 2" >> ${sentinel_conf}
   echo "sentinel down-after-milliseconds ${REDIS_MASTER_NAME} 60000" >> ${sentinel_conf}
   echo "sentinel failover-timeout ${REDIS_MASTER_NAME} 180000" >> ${sentinel_conf}
   echo "sentinel parallel-syncs ${REDIS_MASTER_NAME} 1" >> ${sentinel_conf}
@@ -73,7 +74,7 @@ launchslave() {
   IPADDR=$(ifconfig eth0 | grep 'inet addr' | cut -d ':' -f 2 | cut -d ' ' -f 1)
   sed -i "s/^bind .*$/bind ${IPADDR}/" /etc/redis/slave.conf
   sed -i "s/%master-ip%/${master}/" /etc/redis/slave.conf
-  sed -i "s/%master-port%/6379/" /etc/redis/slave.conf
+  sed -i "s/%master-port%/${PORT}/" /etc/redis/slave.conf
   sed -i "s/%maxmemory%/${MAXMEMORY}/" /etc/redis/slave.conf
   redis-server /etc/redis/slave.conf
 }
