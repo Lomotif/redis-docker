@@ -3,6 +3,7 @@
 # Borrowed shamelessly from https://hub.docker.com/r/kubernetes/redis/
 
 export REDIS_MASTER_NAME=${REDIS_MASTER_NAME:-redismaster}
+export MAXMEMORY=${REDIS_MAXMEMORY:-1000000000}
 
 launchmaster() {
   if [[ ! -e /data/redis ]]; then
@@ -72,6 +73,7 @@ launchslave() {
   sed -i "s/^bind .*$/bind ${IPADDR}/" /etc/redis/slave.conf
   sed -i "s/%master-ip%/${master}/" /etc/redis/slave.conf
   sed -i "s/%master-port%/6379/" /etc/redis/slave.conf
+  sed -i "s/%maxmemory%/${MAXMEMORY}/" /etc/redis/slave.conf
   redis-server /etc/redis/slave.conf
 }
 
