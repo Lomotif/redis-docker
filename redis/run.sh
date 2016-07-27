@@ -6,6 +6,20 @@ export REDIS_MASTER_NAME=${REDIS_MASTER_NAME:-redismaster}
 export PORT=${REDIS_PORT:-6379}
 export MAXMEMORY=${REDIS_MAXMEMORY:-1000000000}
 
+# Evaluating variable indirection in sh
+# Ref: http://stackoverflow.com/a/1014604
+export REDIS_SENTINEL_HOST=${REDIS_SENTINEL_HOST}
+if [ ! ${REDIS_SENTINEL_HOST} ] && [ ${REDIS_SENTINEL_SERVICE_NAME} ]; then
+  SENTINEL_HOST=$(echo "${REDIS_SENTINEL_SERVICE_NAME}_SERVICE_HOST" | tr '[a-z]' '[A-Z]' | tr '-' '_')
+  REDIS_SENTINEL_HOST=$(eval "echo \$${SENTINEL_HOST}")
+fi
+
+export REDIS_SENTINEL_PORT=${REDIS_SENTINEL_PORT}
+if [ ! ${REDIS_SENTINEL_PORT} ] && [ ${REDIS_SENTINEL_SERVICE_NAME} ]; then
+  SENTINEL_PORT=$(echo "${REDIS_SENTINEL_SERVICE_NAME}_SERVICE_PORT" | tr '[a-z]' '[A-Z]' | tr '-' '_')
+  REDIS_SENTINEL_PORT=$(eval "echo \$$SENTINEL_PORT")
+fi
+
 launchmaster() {
   if [[ ! -e /data/redis ]]; then
     echo "Redis master data doesn't exist, data won't be persistent!"
@@ -20,7 +34,7 @@ launchmaster() {
 
 launchsentinel() {
   while true; do
-    master=$(redis-cli -h ${FEED_REDIS_SENTINEL_SERVICE_HOST} -p ${FEED_REDIS_SENTINEL_SERVICE_PORT} --csv SENTINEL get-master-addr-by-name ${REDIS_MASTER_NAME} | tr ',' ' ' | cut -d' ' -f1)
+    master=$(redis-cli -h ${REDIS_SENTINEL_HOST} -p ${REDIS_SENTINEL_PORT} --csv SENTINEL get-master-addr-by-name ${REDIS_MASTER_NAME} | tr ',' ' ' | cut -d' ' -f1)
     if [[ ${master} ]]; then
       master="${master//\"}"
     else
@@ -42,8 +56,8 @@ launchsentinel() {
 
   echo "bind ${IPADDR}" > ${sentinel_conf}
   echo "sentinel monitor ${REDIS_MASTER_NAME} ${master} ${PORT} 2" >> ${sentinel_conf}
-  echo "sentinel down-after-milliseconds ${REDIS_MASTER_NAME} 60000" >> ${sentinel_conf}
-  echo "sentinel failover-timeout ${REDIS_MASTER_NAME} 180000" >> ${sentinel_conf}
+  echo "sentinel down-after-milliseconds ${REDIS_MASTER_NAME} 30000" >> ${sentinel_conf}
+  echo "sentinel failover-timeout ${REDIS_MASTER_NAME} 60000" >> ${sentinel_conf}
   echo "sentinel parallel-syncs ${REDIS_MASTER_NAME} 1" >> ${sentinel_conf}
 
   redis-sentinel ${sentinel_conf}
@@ -55,7 +69,7 @@ launchslave() {
     mkdir /data/redis/
   fi
   while true; do
-    master=$(redis-cli -h ${FEED_REDIS_SENTINEL_SERVICE_HOST} -p ${FEED_REDIS_SENTINEL_SERVICE_PORT} --csv SENTINEL get-master-addr-by-name ${REDIS_MASTER_NAME} | tr ',' ' ' | cut -d' ' -f1)
+    master=$(redis-cli -h ${REDIS_SENTINEL_HOST} -p ${REDIS_SENTINEL_PORT} --csv SENTINEL get-master-addr-by-name ${REDIS_MASTER_NAME} | tr ',' ' ' | cut -d' ' -f1)
     if [[ ${master} ]]; then
       master="${master//\"}"
     else
