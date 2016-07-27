@@ -1,4 +1,4 @@
-#!/bin/ash
+#!/bin/sh
 #
 # Borrowed shamelessly from https://hub.docker.com/r/kubernetes/redis/
 
