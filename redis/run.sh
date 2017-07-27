@@ -58,7 +58,7 @@ launchsentinel() {
 
   echo "bind ${IPADDR}" > ${sentinel_conf}
   echo "sentinel monitor ${REDIS_MASTER_NAME} ${master} ${PORT} 2" >> ${sentinel_conf}
-  echo "sentinel down-after-milliseconds ${REDIS_MASTER_NAME} 30000" >> ${sentinel_conf}
+  echo "sentinel down-after-milliseconds ${REDIS_MASTER_NAME} 5000" >> ${sentinel_conf}
   echo "sentinel failover-timeout ${REDIS_MASTER_NAME} 60000" >> ${sentinel_conf}
   echo "sentinel parallel-syncs ${REDIS_MASTER_NAME} 1" >> ${sentinel_conf}
 
