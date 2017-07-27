@@ -72,19 +72,21 @@ launchslave() {
   fi
   while true; do
     master=$(redis-cli -h ${REDIS_SENTINEL_HOST} -p ${REDIS_SENTINEL_PORT} --csv SENTINEL get-master-addr-by-name ${REDIS_MASTER_NAME} | tr ',' ' ' | cut -d' ' -f1)
+
     if [[ ${master} ]]; then
       master="${master//\"}"
     else
       echo "Failed to find master."
-      sleep 60
+      sleep 10
       exit 1
     fi
+
     redis-cli -h ${master} INFO
     if [[ "$?" == "0" ]]; then
       break
     fi
     echo "Connecting to master failed.  Waiting..."
-    sleep 10
+    sleep 5
   done
 
   IPADDR=$(ifconfig eth0 | grep 'inet addr' | cut -d ':' -f 2 | cut -d ' ' -f 1)
