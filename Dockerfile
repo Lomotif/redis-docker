@@ -1,4 +1,4 @@
-FROM redis:alpine
+FROM redis:4-alpine
 
 RUN apk add  --no-cache su-exec
 
