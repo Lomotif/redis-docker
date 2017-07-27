@@ -25,8 +25,9 @@ launchmaster() {
     echo "Redis master data doesn't exist, data won't be persistent!"
     mkdir /data/redis/
   fi
+
   IPADDR=$(ifconfig eth0 | grep 'inet addr' | cut -d ':' -f 2 | cut -d ' ' -f 1)
-  # IPADDR=0.0.0.0
+  IPADDR="${IPADDR} 127.0.0.1"
   sed -i "s/^bind .*$/bind ${IPADDR}/" /etc/redis/master.conf
   sed -i "s/%maxmemory%/${MAXMEMORY}/" /etc/redis/master.conf
   redis-server /etc/redis/master.conf
@@ -53,6 +54,7 @@ launchsentinel() {
 #  curl http://${KUBERNETES_RO_SERVICE_HOST}:${KUBERNETES_RO_SERVICE_PORT}/api/v1beta1/endpoints/redis-master | python /sentinel.py > ${sentinel_conf}
 
   IPADDR=$(ifconfig eth0 | grep 'inet addr' | cut -d ':' -f 2 | cut -d ' ' -f 1)
+  IPADDR="${IPADDR} 127.0.0.1"
 
   echo "bind ${IPADDR}" > ${sentinel_conf}
   echo "sentinel monitor ${REDIS_MASTER_NAME} ${master} ${PORT} 2" >> ${sentinel_conf}
@@ -86,6 +88,8 @@ launchslave() {
   done
 
   IPADDR=$(ifconfig eth0 | grep 'inet addr' | cut -d ':' -f 2 | cut -d ' ' -f 1)
+  IPADDR="${IPADDR} 127.0.0.1"
+
   sed -i "s/^bind .*$/bind ${IPADDR}/" /etc/redis/slave.conf
   sed -i "s/%master-ip%/${master}/" /etc/redis/slave.conf
   sed -i "s/%master-port%/${PORT}/" /etc/redis/slave.conf
