@@ -7,8 +7,7 @@ RUN mkdir -p /etc/redis && \
     chmod g+w /etc/redis
 
 
-COPY redis/master.conf /etc/redis/master.conf
-COPY redis/slave.conf /etc/redis/slave.conf
+COPY redis/redis.conf /etc/redis/redis.conf
 COPY redis/entrypoint.sh /entrypoint.sh
 COPY redis/run.sh /run.sh
 
