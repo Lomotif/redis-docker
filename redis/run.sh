@@ -10,6 +10,7 @@ export REDIS_MASTER_HOST_FILE=/tmp/REDIS_MASTER_HOST
 export REDIS_MASTER_NAME=${REDIS_MASTER_NAME:-redismaster}
 export PORT=${REDIS_PORT:-6379}
 export MAXMEMORY=${REDIS_MAXMEMORY:-1000000000}
+export REDIS_MASTER_SWITCH=/tmp/REDIS_MASTER_SWITCH
 
 # Evaluating variable indirection in sh
 # Ref: http://stackoverflow.com/a/1014604
@@ -143,6 +144,8 @@ launchslave() {
 
     if $(redis-cli -h "${MASTER}" INFO > /dev/null); then
       break
+    elif [ -f ${REDIS_MASTER_SWITCH} ]; then
+      break
     fi
     echo "Connecting to master failed.  Waiting..."
     sleep 5
@@ -151,11 +154,22 @@ launchslave() {
   IPADDR=$(ifconfig eth0 | grep 'inet addr' | cut -d ':' -f 2 | cut -d ' ' -f 1)
   IPADDR="${IPADDR} 127.0.0.1"
 
-  sed -i "s/^bind .*$/bind ${IPADDR}/" /etc/redis/slave.conf
-  sed -i "s/%master-ip%/${MASTER}/" /etc/redis/slave.conf
-  sed -i "s/%master-port%/${PORT}/" /etc/redis/slave.conf
-  sed -i "s/%maxmemory%/${MAXMEMORY}/" /etc/redis/slave.conf
-  redis-server /etc/redis/slave.conf
+  sed -i "s/^bind .*$/bind ${IPADDR}/" /etc/redis/redis.conf
+
+  # We test for the presence of the REDIS_MASTER_SWITCH file (just the presence, not the contents)
+  # to determine if this slave should configure itself to be a master.
+  # If the file is NOT present, that means we broke out of the above loop because
+  # we were able to contact a valid MASTER node. In which case, we activate
+  # the SLAVEOF directive in redis.conf.
+  # Conversely, if the file IS present, that means the operator has indicated
+  # that this node should become a master, so leave the SLAVEOF directive commented
+  if [ ! -f ${REDIS_MASTER_SWITCH} ]; then
+    sed -i "s/^#slaveof .*$/slaveof \1/" /etc/redis/redis.conf
+    sed -i "s/%master-ip%/${MASTER}/" /etc/redis/redis.conf
+    sed -i "s/%master-port%/${PORT}/" /etc/redis/redis.conf
+  fi
+  sed -i "s/%maxmemory%/${MAXMEMORY}/" /etc/redis/redis.conf
+  redis-server /etc/redis/redis.conf
 }
 
 if [[ "${MASTER}" == "true" ]]; then
