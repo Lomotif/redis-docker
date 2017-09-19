@@ -37,6 +37,7 @@ seekmaster() {
 
   # First, attempt to contact other sentinels
   NODE=$(redis-cli -h ${REDIS_SENTINEL_HOST} -p ${REDIS_SENTINEL_PORT} --csv SENTINEL get-master-addr-by-name ${REDIS_MASTER_NAME} | tr ',' ' ' | cut -d' ' -f1)
+  NODE=${NODE//\"}
 
   # If sentinels aren't alive/responding, fallback to a hardcoded file, or environment variable
   # This is a hail mary play to bootstrap a sentinel cluster without introducing an explicit master redis/sentinel
@@ -81,13 +82,11 @@ seekmaster() {
     fi
   fi
 
-  if [[ "${NODE}" ]]; then
-    NODE="${NODE//\"}"  # Strip quotes
-  else
+  if [[ ! "${NODE}" ]]; then
     NODE=$(hostname -i)   # Attempt looking at localhost, if everything else has failed to set $NODE
   fi
 
-  echo "${NODE}"
+  echo ${NODE}
 }
 
 launchmaster() {
@@ -142,7 +141,7 @@ launchslave() {
   while true; do
     MASTER=$(seekmaster)
 
-    if $(redis-cli -h "${MASTER}" INFO > /dev/null); then
+    if $(redis-cli -h ${MASTER} INFO > /dev/null); then
       break
     elif [ -f ${REDIS_MASTER_SWITCH} ]; then
       break
@@ -164,7 +163,7 @@ launchslave() {
   # Conversely, if the file IS present, that means the operator has indicated
   # that this node should become a master, so leave the SLAVEOF directive commented
   if [ ! -f ${REDIS_MASTER_SWITCH} ]; then
-    sed -i "s/^#slaveof .*$/slaveof \1/" /etc/redis/redis.conf
+    sed -i "s/# slaveof/slaveof/" /etc/redis/redis.conf
     sed -i "s/%master-ip%/${MASTER}/" /etc/redis/redis.conf
     sed -i "s/%master-port%/${PORT}/" /etc/redis/redis.conf
   fi
